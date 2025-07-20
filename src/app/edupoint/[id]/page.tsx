@@ -11,17 +11,17 @@ interface Category {
 }
 
 interface User {
-  id: string
+  id: number
   username: string
 }
 
 interface Article {
-  id: number
-  title: string
-  image: string
-  user: string
-  content: string
-  category: Category
+  id: number;
+  title: string;
+  imageUrl: string;
+  category: Category;
+  user: User;
+  content: string;
 }
 
 export default function ArticleDetailPage() {

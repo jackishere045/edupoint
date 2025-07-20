@@ -20,12 +20,12 @@ interface User {
 }
 
 interface Article {
-  id: number
-  title: string
-  imageUrl: string
-  category: Category
-  user: User
-  content: string
+  id: number;
+  title: string;
+  imageUrl: string;
+  category: Category;
+  user: User;
+  content: string;
 }
 
 
