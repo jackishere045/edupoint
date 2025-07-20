@@ -1,41 +1,48 @@
-"use client"
+"use client";
 
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import api from "@/lib/api"
+import { useRouter } from "next/navigation";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import api from "@/lib/api";
 
 const schema = z.object({
   username: z.string().min(2, "Username is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-})
+});
+
+type LoginForm = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const router = useRouter()
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const router = useRouter();
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(schema),
-  })
+  });
 
-  const onSubmit = async (data: { username: string; password: string }) => {
+  const onSubmit: SubmitHandler<LoginForm> = async (data) => {
     try {
-      const res = await api.post("/auth/login", data)
-      console.log("Login response:", res.data)
+      const res = await api.post("/auth/login", data);
+      console.log("Login response:", res.data);
 
-      const { token } = res.data
+      const { token } = res.data;
       if (!token) {
-        alert("Login failed: Token not received from server.")
-        return
+        alert("Login failed: Token not received from server.");
+        return;
       }
 
-      localStorage.setItem("token", token)
+      localStorage.setItem("token", token);
 
-      router.push("/edupoint")
-    } catch (err: any) {
-      console.error("Login error:", err.response?.data || err.message)
-      alert(err.response?.data?.message || "Login failed. Please check your username and password.")
+      router.push("/edupoint");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        console.error("Login error:", err.response?.data || err.message);
+        alert(err.response?.data?.message || "Login failed. Please check your username and password.");
+      } else {
+        console.error(err);
+        alert("Login failed. Please try again.");
+      }
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -60,5 +67,5 @@ export default function LoginPage() {
         </p>
       </form>
     </div>
-  )
+  );
 }
