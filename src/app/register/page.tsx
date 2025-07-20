@@ -30,7 +30,7 @@ export default function RegisterPage() {
 
       alert("Register success. You can now login.")
       router.push("/login")
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Register error:", err.response?.data || err.message)
       if (err.response?.status === 400) {
         alert("Register failed. Username might already be taken.")
