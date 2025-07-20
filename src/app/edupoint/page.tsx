@@ -14,14 +14,20 @@ interface Category {
   updatedAt: string
 }
 
+interface User {
+  id: number
+  username: string
+}
+
 interface Article {
   id: number
   title: string
   imageUrl: string
   category: Category
-  author: string
+  user: User
   content: string
 }
+
 
 export default function EdupointPage() {
   const [username, setUsername] = useState("")
