@@ -17,7 +17,7 @@ export default function LoginPage() {
     resolver: zodResolver(schema),
   })
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: { username: string; password: string }) => {
     try {
       const res = await api.post("/auth/login", data)
       console.log("Login response:", res.data)

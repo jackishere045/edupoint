@@ -17,7 +17,7 @@ export default function RegisterPage() {
     resolver: zodResolver(schema),
   })
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: { username: string; password: string }) => {
     try {
       const payload = {
         username: data.username,
