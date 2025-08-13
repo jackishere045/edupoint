@@ -6,7 +6,7 @@ EduPoint adalah platform artikel dan kategori berbasis Next.js + Tailwind CSS de
 
 - Admin CRUD Articles
 - Admin CRUD Categories
-- Login & Register dengan layout berbeda
+- Login & Register User dan Admin
 - Responsive design
 - Backend API integration
 
