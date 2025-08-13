@@ -1,7 +1,19 @@
-import type { NextConfig } from "next";
+// next.config.ts
+
+import { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  reactStrictMode: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 's3.sellerpintar.com',
+        port: '',
+        pathname: '/articles/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

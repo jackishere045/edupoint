@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import axios from "axios"
 import api from "@/lib/api"
 
 const schema = z.object({
@@ -31,13 +32,18 @@ export default function RegisterPage() {
       alert("Register success. You can now login.")
       router.push("/login")
     } catch (err: unknown) {
-      console.error("Register error:", err.response?.data || err.message)
+    if (axios.isAxiosError(err)) {
+      console.error("Register error:", err.response?.data || err.message);
       if (err.response?.status === 400) {
-        alert("Register failed. Username might already be taken.")
+        alert("Register failed. Username might already be taken.");
       } else {
-        alert("Register failed. Please try again.")
+        alert("Register failed. Please try again.");
       }
+    } else {
+      console.error("Unexpected error:", err);
+      alert("Unexpected error. Please try again.");
     }
+  }
   }
 
   return (

@@ -52,8 +52,11 @@ export default function ArticleDetailPage() {
   }
 
   useEffect(() => {
-    fetchArticle()
-  }, [id])
+  if (id) {
+    fetchArticle(); // Hanya fetch ketika id valid
+  }
+}, [id]); // Trigger hanya ketika id berubah
+
 
   if (loading) return <p className="p-4">Loading...</p>
   if (!article) return <p className="p-4">Article not found</p>
@@ -86,7 +89,7 @@ export default function ArticleDetailPage() {
           <div className="space-y-4">
             {otherArticles.map((a) => (
               <Link href={`/edupoint/${a.id}`} key={a.id} className="block border rounded overflow-hidden hover:shadow">
-                <img src={a.image} alt={a.title} className="w-full h-32 object-cover" />
+                <img src={a.imageUrl} alt={a.title} className="w-full h-32 object-cover" />
                 <div className="p-2">
                   <h3 className="text-sm font-medium">{a.title}</h3>
                   <p className="text-xs text-gray-500">By {a.user.username}</p>

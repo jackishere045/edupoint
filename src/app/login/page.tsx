@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
 import * as z from "zod";
 import api from "@/lib/api";
 
