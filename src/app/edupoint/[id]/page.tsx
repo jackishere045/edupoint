@@ -126,7 +126,7 @@ export default function ArticleDetailPage() {
     <div className="font-poppins max-w-6xl mx-auto px-6">
       {/* Navbar */}
       <nav className="flex justify-between items-center py-4 relative">
-        <a href="/" className="text-xl font-bold">EduPoint</a>
+        <a className="text-xl font-bold">EduPoint</a>
         
         {/* Search bar */}
         <div className="relative w-64">

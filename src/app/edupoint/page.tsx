@@ -136,7 +136,7 @@ export default function EdupointPage() {
     <div className="font-poppins bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
       {/* Navbar */}
       <div className="absolute top-4 left-6 right-6 flex justify-between items-center text-sm z-10">
-        <a href="/" className="text-xl font-bold text-white">EduPoint</a>
+        <a className="text-xl font-bold text-white">EduPoint</a>
         <div className="flex items-center space-x-4">
           <button
             onClick={toggleDarkMode}
