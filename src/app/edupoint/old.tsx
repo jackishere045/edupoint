@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import axios from "axios";
 import Link from "next/link";
-import { Search, Sun, Moon } from "lucide-react";
+import { Search, Sun, Moon } from "lucide-react"; // Import ikon Sun dan Moon
 import KategoriFilter from "@/components/ui/KategoriFilter";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
 
 interface Category {
   id: string;
   name: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface User {
@@ -28,8 +30,8 @@ interface Article {
 }
 
 export default function EdupointPage() {
+  const [username, setUsername] = useState("");
   const [articles, setArticles] = useState<Article[]>([]);
-  const [allArticles, setAllArticles] = useState<Article[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -39,7 +41,7 @@ export default function EdupointPage() {
     { id: string; name: string }[]
   >([]);
 
-  const articlesPerPage = 9;
+  const articlesPerPage = 10;
 
   // Efek untuk mode gelap
   useEffect(() => {
@@ -61,69 +63,62 @@ export default function EdupointPage() {
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
-  
-  // Mengambil SEMUA artikel dan membuat daftar kategori unik
-  const fetchAllArticles = async () => {
+
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
+
+  const fetchArticles = async (category = "") => {
     setLoading(true);
     try {
-      const articlesCollection = collection(db, "articles");
-      const querySnapshot = await getDocs(articlesCollection);
-      
-      const fetchedArticles: Article[] = [];
+      let url = "https://test-fe.mysellerpintar.com/api/articles?limit=10";
+      if (category) url += `&category=${category}`;
+
+      const res = await axios.get(url);
+      const data = Array.isArray(res.data) ? res.data : res.data.data;
+      setArticles(data);
+      setCurrentPage(1);
+
       const uniqueCategoriesMap = new Map();
-
-      querySnapshot.forEach((doc) => {
-        const articleData = { id: doc.id, ...doc.data() } as Article;
-        fetchedArticles.push(articleData);
-
-        if (articleData.category && typeof articleData.category === "object") {
-          uniqueCategoriesMap.set(articleData.category.id, articleData.category.name);
+      data.forEach((article: Article) => {
+        if (typeof article.category === "object") {
+          uniqueCategoriesMap.set(article.category.id, article.category.name);
         }
       });
-      
-      setAllArticles(fetchedArticles);
-      
-      const uniqueCategories = Array.from(uniqueCategoriesMap, ([id, name]) => ({ id, name }));
+      const uniqueCategories = Array.from(
+        uniqueCategoriesMap,
+        ([id, name]) => ({ id, name })
+      );
       setCategories(uniqueCategories);
-      
     } catch (err) {
-      console.error("Error fetching articles from Firestore:", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Panggil fetchAllArticles HANYA SEKALI saat komponen dimuat
   useEffect(() => {
-    fetchAllArticles();
+    fetchArticles();
   }, []);
 
-  // Efek untuk MENGAPLIKASIKAN filter ketika state berubah
-  useEffect(() => {
-    let filtered = [...allArticles];
+  const filteredArticles = articles.filter((article) =>
+    article.title.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
 
-    // 1. Filter berdasarkan kategori yang dipilih
-    if (selectedCategory) {
-      filtered = filtered.filter(article => 
-        article.category?.name === selectedCategory
-      );
-    }
-
-    // 2. Filter berdasarkan keyword pencarian
-    if (searchKeyword) {
-      filtered = filtered.filter(article =>
-        article.title.toLowerCase().includes(searchKeyword.toLowerCase())
-      );
-    }
-    
-    setArticles(filtered);
-    setCurrentPage(1);
-  }, [selectedCategory, searchKeyword, allArticles]);
-
-  const totalPage = Math.ceil(articles.length / articlesPerPage);
+  const totalPage = Math.ceil(filteredArticles.length / articlesPerPage);
   const indexOfLastArticle = currentPage * articlesPerPage;
   const indexOfFirstArticle = indexOfLastArticle - articlesPerPage;
-  const currentArticles = articles.slice(
+  const currentArticles = filteredArticles.slice(
     indexOfFirstArticle,
     indexOfLastArticle
   );
@@ -136,7 +131,7 @@ export default function EdupointPage() {
     <div className="font-poppins bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
       {/* Navbar */}
       <div className="absolute top-4 left-6 right-6 flex justify-between items-center text-sm z-10">
-        <a href="/" className="text-xl font-bold text-white">EduPoint</a>
+        <div className="font-bold text-white text-lg">EduPoint</div>
         <div className="flex items-center space-x-4">
           <button
             onClick={toggleDarkMode}
@@ -145,11 +140,21 @@ export default function EdupointPage() {
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("username");
+              window.location.href = "/login";
+            }}
+            className="text-sm text-white hover:underline"
+          >
+            Logout
+          </button>
         </div>
       </div>
 
       {/* Hero Section */}
-      <div className="relative h-[300px] sm:h-[380px] md:h-[420px] overflow-hidden text-white z-0">
+      <div className="relative h-[400px] md:h-[420px] overflow-hidden text-white z-0">
         <img
           src="/bg.jpg"
           alt="Hero"
@@ -157,40 +162,44 @@ export default function EdupointPage() {
         />
         <div className="absolute inset-0 bg-blue-600/70 z-0" />
         <div className="relative z-10 flex flex-col justify-center items-center h-full text-center px-4">
-          <p className="text-xs sm:text-sm md:text-base">Edupoint Blog</p>
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-semibold mb-2">
-            Education Articles, Trends,
-            <br /> and Academic Insights
+          <p className="text-sm md:text-base">Blog Genzet</p>
+          <h1 className="text-3xl md:text-5xl font-semibold mb-2">
+            The Journal : Design Resources,
+            <br /> Interviews, and Industry News
           </h1>
-          <p className="text-xs sm:text-sm md:text-base">
-            Your Daily Dose of Knowledge
+          <p className="text-sm md:text-base">
+            Your daily dose of design inspiration
           </p>
-
         </div>
       </div>
 
       {/* Search & Filter */}
-      <div className="relative z-20 -mt-18 max-w-4xl mx-auto px-4">
-        <div className="flex flex-row justify-center items-center gap-2">
+      <div className="relative z-20 -mt-28 max-w-4xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4 bg-white dark:bg-gray-800 shadow-md p-4 rounded-lg">
           <KategoriFilter
             categories={categories}
             selectedCategory={selectedCategory}
-            onSelectCategory={(kategori) => setSelectedCategory(kategori)}
+            onSelectCategory={(kategori) => {
+              setSelectedCategory(kategori);
+              fetchArticles(kategori);
+            }}
           />
 
-          <div className="flex items-center border rounded-full px-3 py-1 w-full sm:w-64 bg-gray-100 dark:bg-gray-700">
+          <div className="flex items-center border rounded-full px-4 py-2 w-full md:w-64 bg-gray-100 dark:bg-gray-700">
             <input
               type="text"
               placeholder="Search"
-              className="outline-none text-xs sm:text-sm w-full bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500"
+              className="outline-none text-sm w-full bg-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500"
               value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
+              onChange={(e) => {
+                setSearchKeyword(e.target.value);
+                setCurrentPage(1);
+              }}
             />
             <Search className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </div>
         </div>
       </div>
-
 
       {/* Articles */}
       <div className="max-w-6xl mx-auto px-4 mt-12">
@@ -200,7 +209,7 @@ export default function EdupointPage() {
         ) : currentArticles.length === 0 ? (
           <p className="p-4">No articles found.</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {currentArticles.map((article) => (
               <Link
                 key={article.id}
@@ -238,6 +247,7 @@ export default function EdupointPage() {
           </div>
         )}
 
+        {/* Pagination */}
         <div className="flex justify-center items-center space-x-2 mt-10">
           <button
             onClick={handlePrev}
@@ -259,6 +269,7 @@ export default function EdupointPage() {
         </div>
       </div>
 
+      {/* Footer */}
       <footer className="text-center text-sm py-6 border-t mt-10 bg-blue-500 text-white">
         © 2025 Edupoint. All rights reserved.
       </footer>

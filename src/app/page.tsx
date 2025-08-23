@@ -1,6 +1,6 @@
 // src/app/page.tsx
-import { redirect } from "next/navigation"
+import EdupointPage from "./edupoint/page"
 
 export default function Home() {
-  redirect("/edupoint")
+  return <EdupointPage />
 }

@@ -1,55 +1,59 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import api from "@/lib/api"
 import { useState } from "react"
-import axios from "axios"
+import { signInWithEmailAndPassword } from "firebase/auth"
+import { auth } from "../../firebase"
+import { checkIsAdmin } from "../adminAuth"
+import { useRouter } from "next/navigation"
 
 const schema = z.object({
-  username: z.string().min(2, "Username is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Email tidak valid").min(1),
+  password: z.string().min(6, "Password minimal 6 karakter")
 })
 
 export default function LoginAdminPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors } 
-  } = useForm({
-    resolver: zodResolver(schema),
+  const { register, handleSubmit, formState: { errors } } = useForm({ 
+    resolver: zodResolver(schema) 
   })
+  const router = useRouter()
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     setLoading(true)
+    
     try {
-      // 1. Lakukan login dan dapatkan token
-      const loginRes = await api.post("/auth/login", data)
-      const { token } = loginRes.data
-      localStorage.setItem("token", token)
-
-      // 2. Gunakan token untuk mendapatkan profil pengguna (ID, role, dll.)
-      const profileRes = await axios.get("https://test-fe.mysellerpintar.com/api/auth/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      const { id, username } = profileRes.data
+      // 1. Login ke Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
       
-      // 3. Simpan ID pengguna dan username ke localStorage
-      localStorage.setItem("userId", id)
-      localStorage.setItem("username", username)
+      // 2. Cek apakah user adalah admin dari Firestore
+      const isAdmin = await checkIsAdmin(data.email)
       
-      alert("Login successful!")
+      if (!isAdmin) {
+        // Jika bukan admin, logout dan tolak akses
+        await auth.signOut()
+        throw new Error("Akses ditolak. Anda bukan administrator.")
+      }
+      
+      // 3. Jika admin, redirect ke dashboard
       router.push("/admin/articles")
       
-    } catch (err) {
-      console.error("Login Error:", err)
-      alert("Login failed. Please check your username and password.")
+    } catch (err: any) {
+      console.error(err)
+      
+      if (err.message.includes("Akses ditolak")) {
+        window.alert("Akses ditolak. Anda bukan administrator.")
+      } else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        window.alert("Email atau kata sandi salah.")
+      } else if (err.code === "auth/invalid-email") {
+        window.alert("Format email tidak valid.")
+      } else if (err.code === "auth/too-many-requests") {
+        window.alert("Terlalu banyak percobaan login. Coba lagi nanti.")
+      } else {
+        window.alert("Login gagal. Silakan cek email dan kata sandi Anda.")
+      }
     } finally {
       setLoading(false)
     }
@@ -57,37 +61,48 @@ export default function LoginAdminPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded shadow w-full max-w-sm">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <h1 className="text-xl font-bold text-center">Login Admin</h1>
-          <div>
-            <input 
-              {...register("username")} 
-              placeholder="Username" 
-              className="border p-2 rounded w-full" 
-            />
-            {errors.username && <p className="text-red-500 text-sm">{errors.username.message}</p>}
+      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
+            <p className="text-sm text-gray-600 mt-2">Masuk ke panel admin EduPoint</p>
           </div>
+          
           <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email Admin
+            </label>
             <input 
-              type="password" 
+              {...register("email")} 
+              type="email" 
+              id="email"
+              placeholder="admin@edupoint.com" 
+              className="border border-gray-300 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+            />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+          </div>
+          
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input 
               {...register("password")} 
-              placeholder="Password" 
-              className="border p-2 rounded w-full" 
+              type="password" 
+              id="password"
+              placeholder="••••••••" 
+              className="border border-gray-300 p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
             />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
           </div>
+          
           <button 
             type="submit" 
-            className="bg-blue-500 text-white px-4 py-2 rounded w-full disabled:bg-gray-400"
+            className="bg-blue-600 text-white px-4 py-3 rounded-lg w-full font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" 
             disabled={loading}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Memvalidasi..." : "Login"}
           </button>
-          <p className="text-sm mt-2 text-center">
-            Belum punya akun?{" "}
-            <a href="/admin/register" className="text-blue-500 underline">Daftar disini</a>
-          </p>
         </form>
       </div>
     </div>
