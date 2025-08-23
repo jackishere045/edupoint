@@ -40,23 +40,24 @@ export default function LoginAdminPage() {
       // 3. Jika admin, redirect ke dashboard
       router.push("/admin/articles")
       
-    } catch (err) {
-      console.error(err)
-      
-      if (err.message.includes("Akses ditolak")) {
-        window.alert("Akses ditolak. Anda bukan administrator.")
-      } else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-        window.alert("Email atau kata sandi salah.")
-      } else if (err.code === "auth/invalid-email") {
-        window.alert("Format email tidak valid.")
-      } else if (err.code === "auth/too-many-requests") {
-        window.alert("Terlalu banyak percobaan login. Coba lagi nanti.")
-      } else {
-        window.alert("Login gagal. Silakan cek email dan kata sandi Anda.")
-      }
-    } finally {
-      setLoading(false)
+  } catch (err: unknown) {
+    console.error(err)
+    
+    const error = err as { code?: string; message?: string }
+    
+    if (error.message?.includes("Akses ditolak")) {
+      window.alert("Akses ditolak. Anda bukan administrator.")
+    } else if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
+      window.alert("Email atau kata sandi salah.")
+    } else if (error.code === "auth/invalid-email") {
+      window.alert("Format email tidak valid.")
+    } else if (error.code === "auth/too-many-requests") {
+      window.alert("Terlalu banyak percobaan login. Coba lagi nanti.")
+    } else {
+      window.alert("Login gagal. Silakan cek email dan kata sandi Anda.")
     }
+  } finally {
+    setLoading(false)
   }
 
   return (
