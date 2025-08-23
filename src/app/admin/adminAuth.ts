@@ -1,4 +1,4 @@
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 export const checkIsAdmin = async (email: string): Promise<boolean> => {
