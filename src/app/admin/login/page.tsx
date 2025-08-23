@@ -40,7 +40,7 @@ export default function LoginAdminPage() {
       // 3. Jika admin, redirect ke dashboard
       router.push("/admin/articles")
       
-    } catch (err: any) {
+    } catch (err) {
       console.error(err)
       
       if (err.message.includes("Akses ditolak")) {
